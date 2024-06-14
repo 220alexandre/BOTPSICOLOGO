@@ -7,11 +7,16 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from senha import *
+from datetime import datetime
+from senha import SECRET_KEY, SQLALCHEMY_DATABASE_URI, API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
 import stripe
 import requests
 import json
-from datetime import datetime
+from PyPDF2 import PdfReader
+import docx
+from bs4 import BeautifulSoup
+from redis import Redis
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -23,10 +28,16 @@ csrf = CSRFProtect(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Configuração do Redis
+redis_host = "localhost"  # Substitua pelo host do seu servidor Redis
+redis_port = 6379         # Substitua pela porta do seu servidor Redis
+redis_password = None     # Substitua pela senha do seu servidor Redis, se aplicável
+
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=f"redis://{redis_host}:{redis_port}/0"
 )
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -48,13 +59,63 @@ class User(UserMixin, db.Model):
     plan = db.Column(db.String(50), nullable=False, default='free')
     token_usage = db.Column(db.Integer, nullable=False, default=0)
     name = db.Column(db.String(100), nullable=False)
-    registration_date = db.Column(db.DateTime, nullable=False)
+    registration_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class FileContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(150), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+
+def load_pdf(file_path):
+    reader = PdfReader(file_path)
+    text = ''
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+def load_docx(file_path):
+    doc = docx.Document(file_path)
+    text = ''
+    for paragraph in doc.paragraphs:
+        text += paragraph.text
+    return text
+
+def load_html(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        soup = BeautifulSoup(file, 'html.parser')
+        return soup.get_text()
+
+def load_files_from_directory(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+         # Verificar se o arquivo já foi carregado
+        existing_file = FileContent.query.filter_by(filename=filename).first()
+        if existing_file:
+            print(f"{filename} already exists in the database. Skipping.")
+            continue
+        
+        if filename.endswith('.pdf'):
+            content = load_pdf(file_path)
+        elif filename.endswith('.docx'):
+            content = load_docx(file_path)
+        elif filename.endswith('.html'):
+            content = load_html(file_path)
+        else:
+            continue
+
+        file_content = FileContent(filename=filename, content=content)
+        db.session.add(file_content)
+    db.session.commit()
+
+with app.app_context():
+    db.create_all()
+    load_files_from_directory('files')
 
 @app.route('/')
 def home():
@@ -195,23 +256,7 @@ headers = {
     "Content-Type": "application/json"
 }
 link = 'https://api.openai.com/v1/chat/completions'
-system_instruction = (
-    "This GPT serves as an expert in Assertive Communication, integrating principles of Nonviolent Communication based on the work of Marshall Rosenberg, "
-    "and incorporating non-directive guidance principles from Carl Rogers' Humanistic Theory. The goal is to help users understand, practice, and refine their skills "
-    "in assertive communication to improve their interactions and relationships in a personalized way according to the person’s taste. GPT will offer the support the person requests, "
-    "always a personalized experience, such as guidance, correcting errors and providing practical examples to facilitate learning. It should maintain a supportive and empathetic tone, "
-    "encouraging users to express themselves honestly and listen to others with compassion. As a general chat attitude, make it a rule to always prolong the conversation, so that the requesting person "
-    "provides and sends as many messages and useful information as possible, and then provides direct responses as requested. Emphasize being sincere, expressing innermost thoughts in an understandable and compassionate way. "
-    "Avoid being too rigid; focus on the essence of assertive communication rather than strictly following a set of rules. Interactions should be conducted empathetically and through the phenomenological method, aiming to faithfully understand "
-    "and validate the situation until the user feels understood. Use the videos from [this link](https://www.youtube.com/live/gWSo-bQyRTw?si=M1XRhpu0X3xV6zBN), [this link](https://www.youtube.com/live/VvNfRolkdiQ?si=2bwdeesY0KM1jZ28), "
-    "[this link](https://www.youtube.com/live/nEv2H8wa-gY?si=0qbjmaf_F7U-n7br), [this link](https://www.youtube.com/live/9GE25gmTo1E?si=C5NHJBX8ajBR-C5d), and [this link](https://www.youtube.com/live/dfUjayu_LDc?si=v3rDIgonOWs85vkz) as references to guide "
-    "and support the principles and examples provided. Additionally, offer suggestions for phrases, word changes, voice intonation, and non-verbal language such as body language and facial expressions. Always ask if suggestions make sense to the user and encourage feedback. "
-    "Use the uploaded file's tables of suggested words, feelings, thoughts, observations, and requests to guide users on how to express themselves effectively. Before offering suggestions and teaching about assertive communication and NVC, encourage users to share more details about their doubts, emotions and situations and use the information provided to adapt the guidance. "
-    "Invest in more questions than affirmative or directive responses initially. When the user presents their issue, ask variations of: 'How would you feel most helped by me?' Offer options such as: explaining concepts, guiding word changes until the user feels satisfied, communication exercises, and more. When asking for information, confirm if the user has finished answering the questions to ensure complete responses. Always ask before providing information to foster empathy. "
-    "Provide one piece of information at a time, checking if the user understood or has any questions, and encourage writing to practice. Incorporate the content from the uploaded books, using relevant examples and insights from them to further enrich the guidance provided. Follow a non-directive approach in responding to requests, asking more questions and teaching only if explicitly requested by the user. Explain topics one at a time and ask for feedback to ensure understanding, encouraging writing exercises if helpful. "
-    "When discussing topics, address one aspect at a time and save the response for later use before moving to the next topic. Always ask more questions before offering a solution, guidance, instruction, or exercise. Provide small, manageable solutions, instructions, or exercises, and always ask for feedback to ensure the user is comprehending. When the user explains what they want, respond with empathy for their situation and ask how they think you can help: 'We can give examples of dialogues, teach you how to communicate assertively with exercises and/or just enrich you theoretically with the most fundamental concepts for this purpose.' "
-    "Address one topic at a time to develop the user's mindset gradually. Limit responses to 500 characters. In the initial responses, focus on more questions, saving answers for precise help. Address one concept at a time with few questions. Ask before offering a solution. In the end, suggest the attached videos as a content suggestion and the books as well."
-)
+
 
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
@@ -229,7 +274,6 @@ def chat():
         body_msg = {
             "model": "gpt-3.5-turbo",
             "messages": [
-                {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_message}
             ]
         }

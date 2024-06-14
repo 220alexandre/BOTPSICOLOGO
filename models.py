@@ -15,9 +15,14 @@ class User(UserMixin, db.Model):
     stripe_subscription_id = db.Column(db.String(100), nullable=True)
     plan = db.Column(db.String(50), nullable=False, default='free')
     token_usage = db.Column(db.Integer, nullable=False, default=0)
+    last_token_reset = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Novo campo
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+class FileContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)  # Alterado para db.Text
