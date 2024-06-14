@@ -7,10 +7,11 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from senha import SECRET_KEY, SQLALCHEMY_DATABASE_URI, API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+from senha import *
 import stripe
 import requests
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -124,12 +125,19 @@ def profile():
         'standard_annual': 'Padrão Anual',
         'premium_annual': 'Premium Anual'
     }
+    plan_limits = {
+        'free': 300,
+        'standard': 5000,
+        'premium': 10000,
+        'standard_annual': 5000,
+        'premium_annual': 10000
+    }
     if request.method == 'POST':
         plan = request.form.get('plan')
         current_user.plan = plan
         db.session.commit()
         flash('Plano atualizado com sucesso.')
-    return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'))
+    return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'), plan_limits=plan_limits)
 
 @app.route('/cancel-subscription', methods=['POST'])
 @login_required
@@ -181,6 +189,7 @@ def subscribe():
     except stripe.error.StripeError as e:
         flash(f'Something went wrong with the subscription: {str(e)}')
         return redirect(url_for('checkout'))
+
 headers = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json"
@@ -203,6 +212,7 @@ system_instruction = (
     "When discussing topics, address one aspect at a time and save the response for later use before moving to the next topic. Always ask more questions before offering a solution, guidance, instruction, or exercise. Provide small, manageable solutions, instructions, or exercises, and always ask for feedback to ensure the user is comprehending. When the user explains what they want, respond with empathy for their situation and ask how they think you can help: 'We can give examples of dialogues, teach you how to communicate assertively with exercises and/or just enrich you theoretically with the most fundamental concepts for this purpose.' "
     "Address one topic at a time to develop the user's mindset gradually. Limit responses to 500 characters. In the initial responses, focus on more questions, saving answers for precise help. Address one concept at a time with few questions. Ask before offering a solution. In the end, suggest the attached videos as a content suggestion and the books as well."
 )
+
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("10 per minute")

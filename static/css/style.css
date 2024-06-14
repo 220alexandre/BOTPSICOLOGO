@@ -8,7 +8,7 @@
 /* Estilos gerais */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
+  background-color: #f4f4f9; /* Cinza claro para fundo */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -20,12 +20,13 @@ body {
 header {
   width: 100%;
   padding: 10px 0;
-  background-color: #007bff;
+  background-color: #4caf50; /* Verde suave para cabeçalho */
   color: white;
   text-align: center;
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 1000; /* Para manter sobreposto */
 }
 
 header nav ul {
@@ -48,7 +49,7 @@ header nav ul li a {
 .content {
   width: 100%;
   max-width: 900px;
-  background: #fff;
+  background: #fff; /* Fundo branco para conteúdo */
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
@@ -59,7 +60,7 @@ h1,
 h2,
 h3 {
   margin-bottom: 20px;
-  color: #333;
+  color: #333; /* Cor escura para títulos */
 }
 
 form {
@@ -82,7 +83,7 @@ form button {
   padding: 10px;
   border: none;
   border-radius: 5px;
-  background-color: #007bff;
+  background-color: #4caf50; /* Verde suave para botão */
   color: white;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -91,7 +92,7 @@ form button {
 }
 
 form button:hover {
-  background-color: #0056b3;
+  background-color: #45a049; /* Verde mais escuro ao passar o mouse */
 }
 
 #chatbox {
@@ -107,7 +108,7 @@ form button:hover {
   overflow-y: auto;
   margin-bottom: 20px;
   padding: 10px;
-  background-color: #f9f9f9;
+  background-color: #f9f9f9; /* Fundo cinza claro para mensagens */
   border-radius: 10px;
 }
 
@@ -120,27 +121,13 @@ form button:hover {
 }
 
 #messages div:nth-child(odd) {
-  background-color: #e1f5fe;
+  background-color: #e0f2f1; /* Verde-água para mensagens ímpares */
   align-self: flex-start;
 }
 
 #messages div:nth-child(even) {
-  background-color: #c8e6c9;
+  background-color: #b2dfdb; /* Verde-água mais claro para mensagens pares */
   align-self: flex-end;
-}
-button {
-  width: 80px;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #0056b3;
 }
 
 .plan-container {
@@ -183,8 +170,8 @@ button:hover {
 }
 
 .btn-plan {
-  background: #28a745;
-  color: #fff;
+  background: #007bff; /* Azul para botões de plano */
+  color: white;
   padding: 10px 20px;
   border: none;
   cursor: pointer;
@@ -195,11 +182,11 @@ button:hover {
 }
 
 .btn-plan:hover {
-  background: #218838;
+  background: #0056b3; /* Azul mais escuro ao passar o mouse */
 }
 
 a {
-  color: #007bff;
+  color: #007bff; /* Azul para links */
   text-decoration: none;
 }
 
