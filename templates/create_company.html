@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Criar Empresa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Criar Empresa</h1>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="mb-3">
+          <label for="name" class="form-label">Nome da Empresa</label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            name="name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="token_limit" class="form-label">Limite de Tokens</label>
+          <input
+            type="number"
+            class="form-control"
+            id="token_limit"
+            name="token_limit"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="user_limit" class="form-label">Limite de Usuários</label>
+          <input
+            type="number"
+            class="form-control"
+            id="user_limit"
+            name="user_limit"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Criar Empresa</button>
+      </form>
+    </div>
+  </body>
+</html>

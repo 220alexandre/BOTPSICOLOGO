@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}Manage Company{% endblock %} {% block
+content %}
+<h1>Manage Company: {{ company.name }}</h1>
+<form
+  method="POST"
+  action="{{ url_for('update_company', company_id=company.id) }}"
+>
+  <div class="mb-3">
+    <label for="plan" class="form-label">Plan</label>
+    <input
+      type="text"
+      class="form-control"
+      id="plan"
+      name="plan"
+      value="{{ company.plan }}"
+    />
+  </div>
+  <div class="mb-3">
+    <label for="token_limit" class="form-label">Token Limit</label>
+    <input
+      type="number"
+      class="form-control"
+      id="token_limit"
+      name="token_limit"
+      value="{{ company.token_limit }}"
+    />
+  </div>
+  <div class="mb-3">
+    <label for="monthly_cost" class="form-label">Monthly Cost</label>
+    <input
+      type="number"
+      class="form-control"
+      id="monthly_cost"
+      name="monthly_cost"
+      value="{{ company.monthly_cost }}"
+    />
+  </div>
+  <button type="submit" class="btn btn-primary">Update</button>
+</form>
+{% endblock %}

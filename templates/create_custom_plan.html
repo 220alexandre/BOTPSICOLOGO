@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Criar Plano Personalizado</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Criar Plano Personalizado</h1>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="mb-3">
+          <label for="company_id" class="form-label">Empresa</label>
+          <select
+            class="form-control"
+            id="company_id"
+            name="company_id"
+            required
+          >
+            {% for company in companies %}
+            <option value="{{ company.id }}">{{ company.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="price" class="form-label">Preço</label>
+          <input
+            type="number"
+            step="0.01"
+            class="form-control"
+            id="price"
+            name="price"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="tokens_per_user" class="form-label"
+            >Tokens por Usuário</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            id="tokens_per_user"
+            name="tokens_per_user"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Criar Plano</button>
+      </form>
+    </div>
+  </body>
+</html>

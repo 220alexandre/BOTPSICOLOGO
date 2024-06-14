@@ -1,59 +1,80 @@
 {% extends "base.html" %} {% block title %}Planos{% endblock %} {% block content
 %}
-<h2>Nossos Planos</h2>
-
-<div class="plan-container">
-  <div class="plan">
-    <h3>Mensal Padrão</h3>
-    <p>Preço: R$30/mês</p>
-    <p>Benefícios:</p>
-    <ul>
-      <li>5000 tokens por mês</li>
-      <li>Suporte por email</li>
-    </ul>
-    <a href="https://buy.stripe.com/test_5kAg28fAI9Dd2uA8wy" class="btn-plan"
-      >Assinar</a
-    >
-  </div>
-
-  <div class="plan">
-    <h3>Mensal Premium</h3>
-    <p>Preço: R$50/mês</p>
-    <p>Benefícios:</p>
-    <ul>
-      <li>Tokens ilimitados</li>
-      <li>Suporte prioritário</li>
-    </ul>
-    <a href="https://buy.stripe.com/test_eVaaHO88g9Ddc5a5kk" class="btn-plan"
-      >Assinar</a
-    >
-  </div>
-
-  <div class="plan">
-    <h3>Anual Padrão</h3>
-    <p>Preço: R$300/ano</p>
-    <p>Benefícios:</p>
-    <ul>
-      <li>5000 tokens por mês</li>
-      <li>Suporte por email</li>
-    </ul>
-    <a href="https://buy.stripe.com/test_eVa6ryewE5mX4CI3cd" class="btn-plan"
-      >Assinar</a
-    >
-  </div>
-
-  <div class="plan">
-    <h3>Anual Premium</h3>
-    <p>Preço: R$500/ano</p>
-    <p>Benefícios:</p>
-    <ul>
-      <li>Tokens ilimitados</li>
-      <li>Suporte prioritário</li>
-    </ul>
-    <a href="https://buy.stripe.com/test_28odU01JS7v58SYbIL" class="btn-plan"
-      >Assinar</a
-    >
+<div class="container mt-5">
+  <h2 class="text-center">Nossos Planos</h2>
+  <div class="row mt-4">
+    <div class="col-md-3">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h3 class="card-title">Mensal Padrão</h3>
+          <p>Preço: R$30/mês</p>
+          <p>Benefícios:</p>
+          <ul>
+            <li>5000 tokens por mês</li>
+            <li>Suporte por email</li>
+          </ul>
+          <a
+            href="https://buy.stripe.com/test_5kAg28fAI9Dd2uA8wy"
+            class="btn btn-success"
+            >Assinar</a
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h3 class="card-title">Mensal Premium</h3>
+          <p>Preço: R$50/mês</p>
+          <p>Benefícios:</p>
+          <ul>
+            <li>Tokens ilimitados</li>
+            <li>Suporte prioritário</li>
+          </ul>
+          <a
+            href="https://buy.stripe.com/test_eVaaHO88g9Ddc5a5kk"
+            class="btn btn-success"
+            >Assinar</a
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h3 class="card-title">Anual Padrão</h3>
+          <p>Preço: R$300/ano</p>
+          <p>Benefícios:</p>
+          <ul>
+            <li>5000 tokens por mês</li>
+            <li>Suporte por email</li>
+          </ul>
+          <a
+            href="https://buy.stripe.com/test_eVa6ryewE5mX4CI3cd"
+            class="btn btn-success"
+            >Assinar</a
+          >
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h3 class="card-title">Anual Premium</h3>
+          <p>Preço: R$500/ano</p>
+          <p>Benefícios:</p>
+          <ul>
+            <li>Tokens ilimitados</li>
+            <li>Suporte prioritário</li>
+          </ul>
+          <a
+            href="https://buy.stripe.com/test_28odU01JS7v58SYbIL"
+            class="btn btn-success"
+            >Assinar</a
+          >
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-
 {% endblock %}

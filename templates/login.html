@@ -1,15 +1,30 @@
 {% extends "base.html" %} {% block title %}Login{% endblock %} {% block content
 %}
-<form action="{{ url_for('login') }}" method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-  <div>
-    <label for="email">Email:</label>
-    <input type="email" name="email" id="email" required />
-  </div>
-  <div>
-    <label for="password">Password:</label>
-    <input type="password" name="password" id="password" required />
-  </div>
-  <button type="submit">Login</button>
-</form>
+<div class="container mt-5">
+  <h2 class="text-center">Login</h2>
+  <form method="POST" class="mt-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        name="email"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">Senha</label>
+      <input
+        type="password"
+        class="form-control"
+        id="password"
+        name="password"
+        required
+      />
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Login</button>
+  </form>
+</div>
 {% endblock %}

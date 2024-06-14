@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Administração</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Painel de Administração</h1>
+      <a href="{{ url_for('create_company') }}" class="btn btn-primary mb-3"
+        >Criar Empresa</a
+      >
+      <a href="{{ url_for('create_custom_plan') }}" class="btn btn-primary mb-3"
+        >Criar Plano Personalizado</a
+      >
+      <h2>Empresas</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Limite de Tokens</th>
+            <th>Limite de Usuários</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for company in companies %}
+          <tr>
+            <td>{{ company.name }}</td>
+            <td>{{ company.token_limit }}</td>
+            <td>{{ company.user_limit }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

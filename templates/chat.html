@@ -1,18 +1,29 @@
 {% extends "base.html" %} {% block title %}Chat{% endblock %} {% block content
 %}
-<h1>Chat</h1>
-<div id="chatbox">
-  <div id="messages"></div>
-  <form id="chatForm" onsubmit="sendMessage(event)">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input
-      type="text"
-      id="userInput"
-      placeholder="Digite sua mensagem"
-      required
-    />
-    <button type="submit" id="sendButton">Enviar</button>
-  </form>
+<div class="container mt-5">
+  <h1 class="text-center mb-4">Chat</h1>
+  <div id="chatbox" class="card">
+    <div
+      id="messages"
+      class="card-body"
+      style="height: 400px; overflow-y: auto"
+    ></div>
+    <div class="card-footer">
+      <form id="chatForm" onsubmit="sendMessage(event)" class="d-flex">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Digite sua mensagem"
+          class="form-control me-2"
+          required
+        />
+        <button type="submit" id="sendButton" class="btn btn-primary">
+          Enviar
+        </button>
+      </form>
+    </div>
+  </div>
 </div>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

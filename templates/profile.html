@@ -1,17 +1,45 @@
 {% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
 %}
-<div class="content">
+<div class="container mt-5">
   <h1>Perfil do Usuário</h1>
   <p>Email: {{ current_user.email }}</p>
   <p>Nome: {{ current_user.name }}</p>
   <p>Data de Registro: {{ current_user.registration_date }}</p>
   <p>Plano atual: {{ plan_name }}</p>
-  <p>Limite de tokens: {{ plan_limits[current_user.plan] }}</p>
+  <p>
+    Limite de tokens: {{ plan_limits.get(current_user.plan, 'Desconhecido') }}
+  </p>
+  <p>Tokens utilizados: {{ current_user.token_usage }}</p>
 
-  {% if current_user.plan != 'free' %}
+  {% if current_user.company %}
+  <h2>Informações da Empresa</h2>
+  <p>Empresa: {{ current_user.company.name }}</p>
+  <p>
+    Tokens utilizados pela empresa: {{ current_user.company.current_token_usage
+    }}
+  </p>
+  <p>Limite de tokens da empresa: {{ current_user.company.token_limit }}</p>
+
+  <h3>Empregados</h3>
+  <ul>
+    {% for employee in current_user.company.employees %}
+    <li>
+      {{ employee.name }} ({{ employee.email }})
+      <form
+        method="post"
+        action="{{ url_for('remove_employee', employee_id=employee.id) }}"
+        style="display: inline"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %} {% if current_user.plan != 'free' %}
   <form method="post" action="{{ url_for('cancel_subscription') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <button type="submit">Cancelar Assinatura</button>
+    <button type="submit" class="btn btn-danger">Cancelar Assinatura</button>
   </form>
   {% endif %}
 </div>

@@ -16,6 +16,7 @@ from PyPDF2 import PdfReader
 import docx
 from bs4 import BeautifulSoup
 from redis import Redis
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 
 app = Flask(__name__)
@@ -50,6 +51,10 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
@@ -60,6 +65,11 @@ class User(UserMixin, db.Model):
     token_usage = db.Column(db.Integer, nullable=False, default=0)
     name = db.Column(db.String(100), nullable=False)
     registration_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
+
+    company = db.relationship('Company', back_populates='users')
+    employee = db.relationship('Employee', uselist=False, back_populates='user')  # Adicionado
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -67,11 +77,49 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class Company(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), unique=True, nullable=False)
+    user_limit = db.Column(db.Integer, nullable=False)
+    token_limit = db.Column(db.Integer, nullable=False)
+    current_token_usage = db.Column(db.Integer, nullable=False, default=0)
+
+    users = db.relationship('User', back_populates='company')
+    employees = db.relationship('Employee', back_populates='company')
+    custom_plans = db.relationship('CustomPlan', order_by='CustomPlan.id', back_populates='company')
+
+class Employee(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Adicionado
+    token_usage = db.Column(db.Integer, nullable=False, default=0)
+    user_limit = db.Column(db.Integer, nullable=False, default=0)
+    name = db.Column(db.String(100), nullable=False)
+
+    company = db.relationship('Company', back_populates='employees')
+    user = db.relationship('User', back_populates='employee')  # Adicionado
+
+
 class FileContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(150), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(LONGTEXT, nullable=False)
 
+class CustomPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    tokens_per_user = db.Column(db.Integer, nullable=False)
+
+    company = db.relationship('Company', back_populates='custom_plans')
 def load_pdf(file_path):
     reader = PdfReader(file_path)
     text = ''
@@ -94,7 +142,7 @@ def load_html(file_path):
 def load_files_from_directory(directory):
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
-         # Verificar se o arquivo já foi carregado
+        # Verificar se o arquivo já foi carregado
         existing_file = FileContent.query.filter_by(filename=filename).first()
         if existing_file:
             print(f"{filename} already exists in the database. Skipping.")
@@ -139,6 +187,139 @@ def login():
 @login_required
 def plans():
     return render_template('plans.html')
+
+# Adicione a rota para o painel de administração
+@app.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin_panel():
+    if not current_user.is_admin:
+        flash('Acesso negado.')
+        return redirect(url_for('home'))
+
+    users = User.query.all()
+    return render_template('admin.html', users=users)
+
+@app.route('/admin/cancel_subscription/<user_id>', methods=['POST'])
+@login_required
+def admin_cancel_subscription(user_id):
+    if not current_user.is_admin:
+        flash('Acesso negado.')
+        return redirect(url_for('home'))
+
+    user = User.query.get(user_id)
+    if user and user.stripe_subscription_id:
+        try:
+            stripe.Subscription.delete(user.stripe_subscription_id)
+            user.stripe_subscription_id = None
+            user.plan = 'free'
+            db.session.commit()
+            flash('Assinatura cancelada com sucesso.')
+        except stripe.error.StripeError as e:
+            flash(f'Ocorreu um erro ao cancelar a assinatura: {str(e)}')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/company/<int:company_id>', methods=['GET', 'POST'])
+@login_required
+def manage_company(company_id):
+    if not current_user.is_admin:
+        flash('Access denied.')
+        return redirect(url_for('home'))
+    company = Company.query.get_or_404(company_id)
+    if request.method == 'POST':
+        company.plan = request.form.get('plan')
+        company.token_limit = int(request.form.get('token_limit'))
+        company.monthly_cost = int(request.form.get('monthly_cost'))
+        db.session.commit()
+        flash('Company updated successfully.')
+        return redirect(url_for('admin_dashboard'))
+    return render_template('manage_company.html', company=company)
+
+@app.route('/create-company', methods=['GET', 'POST'])
+@login_required
+def create_company():
+    if not current_user.is_admin:
+        flash('Apenas administradores podem criar empresas.')
+        return redirect(url_for('profile'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        token_limit = request.form.get('token_limit', type=int)
+        user_limit = request.form.get('user_limit', type=int)
+
+        company = Company(name=name, token_limit=token_limit, user_limit=user_limit)
+        db.session.add(company)
+        db.session.commit()
+        flash('Empresa criada com sucesso.')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('create_company.html')
+
+@app.route('/remove_employee/<int:employee_id>', methods=['POST'])
+@login_required
+def remove_employee(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    if not current_user.is_admin or current_user.company_id != employee.company_id:
+        flash("Você não tem permissão para remover este empregado.")
+        return redirect(url_for('profile'))
+
+    db.session.delete(employee)
+    db.session.commit()
+    flash("Empregado removido com sucesso.")
+    return redirect(url_for('profile'))
+
+
+@app.route('/admin-dashboard')
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        flash('Apenas administradores podem acessar o painel de administração.')
+        return redirect(url_for('profile'))
+
+    companies = Company.query.all()
+    return render_template('admin_dashboard.html', companies=companies)
+
+@app.route('/company/<int:company_id>/employees', methods=['GET', 'POST'])
+@login_required
+def manage_employees(company_id):
+    company = Company.query.get_or_404(company_id)
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        existing_employee = Employee.query.filter_by(email=email).first()
+        if existing_employee:
+            flash('Funcionário com este email já existe.')
+        else:
+            new_employee = Employee(name=name, email=email, company_id=company.id)
+            db.session.add(new_employee)
+            db.session.commit()
+            flash('Funcionário adicionado com sucesso.')
+
+    employees = Employee.query.filter_by(company_id=company_id).all()
+    return render_template('manage_employees.html', company=company, employees=employees)
+
+@app.route('/create-custom-plan', methods=['GET', 'POST'])
+@login_required
+def create_custom_plan():
+    if not current_user.is_admin:
+        flash('Apenas administradores podem criar planos personalizados.')
+        return redirect(url_for('profile'))
+
+    if request.method == 'POST':
+        company_id = request.form.get('company_id', type=int)
+        price = request.form.get('price', type=float)
+        tokens_per_user = request.form.get('tokens_per_user', type=int)
+
+        plan = CustomPlan(company_id=company_id, price=price, tokens_per_user=tokens_per_user)
+        db.session.add(plan)
+        db.session.commit()
+        flash('Plano personalizado criado com sucesso.')
+        return redirect(url_for('admin_dashboard'))
+
+    companies = Company.query.all()
+    
+    return render_template('create_custom_plan.html', companies=companies)
+
 
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
@@ -193,12 +374,22 @@ def profile():
         'standard_annual': 5000,
         'premium_annual': 10000
     }
+    company_name = current_user.company.name if current_user.company else 'Nenhuma'
+    company_token_usage = current_user.company.current_token_usage if current_user.company else 'N/A'
+    company_token = current_user.company.token_limit if current_user.company else 'N/A'
+    
     if request.method == 'POST':
         plan = request.form.get('plan')
         current_user.plan = plan
         db.session.commit()
         flash('Plano atualizado com sucesso.')
-    return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'), plan_limits=plan_limits)
+    
+    return render_template('profile.html', 
+                           plan_name=plan_names.get(current_user.plan, 'Grátis'), 
+                           plan_limits=plan_limits,
+                           company_name=company_name,
+                           company_token_usage=company_token_usage,
+                           company_token=company_token)
 
 @app.route('/cancel-subscription', methods=['POST'])
 @login_required
@@ -252,7 +443,7 @@ def subscribe():
         return redirect(url_for('checkout'))
 
 headers = {
-    "Authorization": f"Bearer {API_KEY}",
+    "Authorization": f"Bearer " + API_KEY,
     "Content-Type": "application/json"
 }
 link = 'https://api.openai.com/v1/chat/completions'
@@ -265,9 +456,16 @@ def chat():
     if request.method == 'POST':
         user_message = request.json.get('message')
 
-        # Verificação do plano do usuário
-        plan_limits = {'free': 300, 'standard': 5000, 'premium': 10000, 'standard_annual': 5000, 'premium_annual': 10000}
-        if current_user.token_usage >= plan_limits[current_user.plan]:
+        # Verificação do plano do usuário ou da empresa
+        if current_user.company_id:
+            company = Company.query.get(current_user.company_id)
+            plan_limits = company.token_limit
+            token_usage = company.current_token_usage
+        else:
+            plan_limits = {'free': 300, 'standard': 5000, 'premium': 10000, 'standard_annual': 5000, 'premium_annual': 10000}
+            token_usage = current_user.token_usage
+
+        if token_usage >= plan_limits:
             return jsonify({"error": "Token limit exceeded for your plan."})
 
         # Corpo da mensagem
@@ -286,10 +484,14 @@ def chat():
             response = req.json()
             response_message = response['choices'][0]['message']['content']
 
-            # Atualizando o uso de tokens do usuário
+            # Atualizando o uso de tokens do usuário ou da empresa
             token_count = sum(len(message['content']) for message in body_msg['messages'])
-            current_user.token_usage += token_count
-            db.session.commit()
+            if current_user.company_id:
+                company.current_token_usage += token_count
+                db.session.commit()
+            else:
+                current_user.token_usage += token_count
+                db.session.commit()
 
             return jsonify({"response": response_message})
         else:

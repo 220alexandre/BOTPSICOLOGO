@@ -6,20 +6,35 @@
     <title>{% block title %}Meu Aplicativo{% endblock %}</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
     />
   </head>
   <body>
-    <header>
-      <nav>
-        <ul>
-          <li><a href="{{ url_for('chat') }}">Chat</a></li>
-          <li><a href="{{ url_for('profile') }}">Perfil</a></li>
-          <li><a href="{{ url_for('plans') }}">Planos</a></li>
-          <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    <header class="bg-primary text-white p-3">
+      <nav class="container">
+        <ul class="nav">
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('chat') }}">Chat</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('profile') }}"
+              >Perfil</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('plans') }}"
+              >Planos</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('logout') }}"
+              >Logout</a
+            >
+          </li>
         </ul>
       </nav>
     </header>
-    <div class="container">{% block content %}{% endblock %}</div>
+    <div class="container mt-5">{% block content %}{% endblock %}</div>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
   </body>
 </html>
