@@ -1,6 +1,15 @@
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
+db = SQLAlchemy()
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
+    name = db.Column(db.String(150), nullable=True)  # Novo campo para o nome
+    registration_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Novo campo para a data de registro
     password_hash = db.Column(db.String(256), nullable=False)
     stripe_customer_id = db.Column(db.String(100), nullable=True)
     stripe_subscription_id = db.Column(db.String(100), nullable=True)

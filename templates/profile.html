@@ -1,12 +1,20 @@
 {% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
 %}
-<h2>Perfil do Usuário</h2>
-<p>Email: {{ current_user.email }}</p>
-<p>Plano atual: {{ plan_name }}</p>
+<div class="content">
+  <h1>Perfil do Usuário</h1>
+  <p>Email: {{ current_user.email }}</p>
+  <p>Nome: {{ current_user.name }}</p>
+  <p>Data de Registro: {{ current_user.registration_date }}</p>
+  <p>Plano atual: {{ plan_name }}</p>
+  <p>Limite de tokens: {{ plan_limits[current_user.plan] }}</p>
 
-{% if current_user.plan != 'free' %}
-<form action="{{ url_for('cancel_subscription') }}" method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-  <button type="submit" class="btn btn-danger">Cancelar Assinatura</button>
-</form>
-{% endif %} {% endblock %}
+  {% if current_user.plan != 'free' %}
+  <form method="post" action="{{ url_for('cancel_subscription') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button type="submit">Cancelar Assinatura</button>
+  </form>
+  {% endif %}
+
+  <a href="{{ url_for('update_password') }}">Alterar Senha</a>
+</div>
+{% endblock %}

@@ -1,14 +1,16 @@
 import os
-import stripe
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
-from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from senha import SECRET_KEY, SQLALCHEMY_DATABASE_URI, API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
+import stripe
+import requests
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -44,6 +46,8 @@ class User(UserMixin, db.Model):
     stripe_subscription_id = db.Column(db.String(100), nullable=True)
     plan = db.Column(db.String(50), nullable=False, default='free')
     token_usage = db.Column(db.Integer, nullable=False, default=0)
+    name = db.Column(db.String(100), nullable=False)
+    registration_date = db.Column(db.DateTime, nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -72,17 +76,16 @@ def login():
 @app.route('/plans')
 @login_required
 def plans():
-    return render_template('plans.html', key=STRIPE_PUBLISHABLE_KEY)
+    return render_template('plans.html')
 
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():
-    data = request.get_json()
-    plan_id = data.get('plan_id')
+    plan_id = request.form.get('plan_id')
     
     try:
         session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
+            payment_method_types=['card', 'pix'],
             line_items=[{
                 'price': plan_id,
                 'quantity': 1,
@@ -102,7 +105,8 @@ def register():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        user = User(email=email)
+        name = request.form.get('name')
+        user = User(email=email, name=name, registration_date=datetime.utcnow())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -113,11 +117,6 @@ def register():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    if request.method == 'POST':
-        plan = request.form.get('plan')
-        current_user.plan = plan
-        db.session.commit()
-        flash('Plan updated successfully.')
     plan_names = {
         'free': 'Grátis',
         'standard': 'Padrão Mensal',
@@ -125,24 +124,85 @@ def profile():
         'standard_annual': 'Padrão Anual',
         'premium_annual': 'Premium Anual'
     }
+    if request.method == 'POST':
+        plan = request.form.get('plan')
+        current_user.plan = plan
+        db.session.commit()
+        flash('Plano atualizado com sucesso.')
     return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'))
 
-@app.route('/cancel_subscription', methods=['POST'])
+@app.route('/cancel-subscription', methods=['POST'])
 @login_required
 def cancel_subscription():
-    try:
-        if current_user.stripe_subscription_id:
+    if current_user.stripe_subscription_id:
+        try:
             stripe.Subscription.delete(current_user.stripe_subscription_id)
-            current_user.plan = 'free'
             current_user.stripe_subscription_id = None
+            current_user.plan = 'free'
             db.session.commit()
             flash('Assinatura cancelada com sucesso.')
-        else:
-            flash('Você não tem uma assinatura ativa para cancelar.')
-    except Exception as e:
-        flash(f'Erro ao cancelar a assinatura: {str(e)}')
+        except stripe.error.StripeError as e:
+            flash(f'Ocorreu um erro ao cancelar a assinatura: {str(e)}')
     return redirect(url_for('profile'))
 
+@app.route('/checkout')
+@login_required
+def checkout():
+    return render_template('checkout.html', key=STRIPE_PUBLISHABLE_KEY)
+
+@app.route('/subscribe', methods=['POST'])
+@login_required
+def subscribe():
+    plan_id = request.form.get('plan_id')
+    token = request.form.get('stripeToken')
+
+    try:
+        if not current_user.stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=current_user.email,
+                source=token
+            )
+            current_user.stripe_customer_id = customer.id
+        else:
+            customer = stripe.Customer.retrieve(current_user.stripe_customer_id)
+
+        subscription = stripe.Subscription.create(
+            customer=customer.id,
+            items=[{'plan': plan_id}],
+        )
+
+        current_user.stripe_subscription_id = subscription.id
+        current_user.plan = plan_id
+        db.session.commit()
+
+        flash('Subscription was successful.')
+        return redirect(url_for('profile'))
+
+    except stripe.error.StripeError as e:
+        flash(f'Something went wrong with the subscription: {str(e)}')
+        return redirect(url_for('checkout'))
+headers = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json"
+}
+link = 'https://api.openai.com/v1/chat/completions'
+system_instruction = (
+    "This GPT serves as an expert in Assertive Communication, integrating principles of Nonviolent Communication based on the work of Marshall Rosenberg, "
+    "and incorporating non-directive guidance principles from Carl Rogers' Humanistic Theory. The goal is to help users understand, practice, and refine their skills "
+    "in assertive communication to improve their interactions and relationships in a personalized way according to the person’s taste. GPT will offer the support the person requests, "
+    "always a personalized experience, such as guidance, correcting errors and providing practical examples to facilitate learning. It should maintain a supportive and empathetic tone, "
+    "encouraging users to express themselves honestly and listen to others with compassion. As a general chat attitude, make it a rule to always prolong the conversation, so that the requesting person "
+    "provides and sends as many messages and useful information as possible, and then provides direct responses as requested. Emphasize being sincere, expressing innermost thoughts in an understandable and compassionate way. "
+    "Avoid being too rigid; focus on the essence of assertive communication rather than strictly following a set of rules. Interactions should be conducted empathetically and through the phenomenological method, aiming to faithfully understand "
+    "and validate the situation until the user feels understood. Use the videos from [this link](https://www.youtube.com/live/gWSo-bQyRTw?si=M1XRhpu0X3xV6zBN), [this link](https://www.youtube.com/live/VvNfRolkdiQ?si=2bwdeesY0KM1jZ28), "
+    "[this link](https://www.youtube.com/live/nEv2H8wa-gY?si=0qbjmaf_F7U-n7br), [this link](https://www.youtube.com/live/9GE25gmTo1E?si=C5NHJBX8ajBR-C5d), and [this link](https://www.youtube.com/live/dfUjayu_LDc?si=v3rDIgonOWs85vkz) as references to guide "
+    "and support the principles and examples provided. Additionally, offer suggestions for phrases, word changes, voice intonation, and non-verbal language such as body language and facial expressions. Always ask if suggestions make sense to the user and encourage feedback. "
+    "Use the uploaded file's tables of suggested words, feelings, thoughts, observations, and requests to guide users on how to express themselves effectively. Before offering suggestions and teaching about assertive communication and NVC, encourage users to share more details about their doubts, emotions and situations and use the information provided to adapt the guidance. "
+    "Invest in more questions than affirmative or directive responses initially. When the user presents their issue, ask variations of: 'How would you feel most helped by me?' Offer options such as: explaining concepts, guiding word changes until the user feels satisfied, communication exercises, and more. When asking for information, confirm if the user has finished answering the questions to ensure complete responses. Always ask before providing information to foster empathy. "
+    "Provide one piece of information at a time, checking if the user understood or has any questions, and encourage writing to practice. Incorporate the content from the uploaded books, using relevant examples and insights from them to further enrich the guidance provided. Follow a non-directive approach in responding to requests, asking more questions and teaching only if explicitly requested by the user. Explain topics one at a time and ask for feedback to ensure understanding, encouraging writing exercises if helpful. "
+    "When discussing topics, address one aspect at a time and save the response for later use before moving to the next topic. Always ask more questions before offering a solution, guidance, instruction, or exercise. Provide small, manageable solutions, instructions, or exercises, and always ask for feedback to ensure the user is comprehending. When the user explains what they want, respond with empathy for their situation and ask how they think you can help: 'We can give examples of dialogues, teach you how to communicate assertively with exercises and/or just enrich you theoretically with the most fundamental concepts for this purpose.' "
+    "Address one topic at a time to develop the user's mindset gradually. Limit responses to 500 characters. In the initial responses, focus on more questions, saving answers for precise help. Address one concept at a time with few questions. Ask before offering a solution. In the end, suggest the attached videos as a content suggestion and the books as well."
+)
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("10 per minute")
@@ -194,7 +254,7 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/webhook', methods=['POST'])
-@csrf.exempt  # Desabilitar CSRF para esta rota
+@csrf.exempt
 def stripe_webhook():
     payload = request.get_data(as_text=True)
     sig_header = request.headers.get('Stripe-Signature')
@@ -204,83 +264,44 @@ def stripe_webhook():
     print(f"Payload: {payload}")
     print(f"Signature Header: {sig_header}")
 
+    event = None
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
-        print(f"Evento construído: {event}")
     except ValueError as e:
         # Invalid payload
-        print("Payload inválido", e)
+        print(f"Erro de payload inválido: {str(e)}")
         return jsonify(success=False), 400
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
-        print("Assinatura inválida", e)
-        return jsonify(success=False), 400
-    except Exception as e:
-        # General exception handler for any other errors
-        print("Erro geral ao processar o webhook", e)
+        print(f"Erro de verificação de assinatura: {str(e)}")
         return jsonify(success=False), 400
 
     # Handle the event
     if event['type'] == 'checkout.session.completed':
-        print("Evento checkout.session.completed recebido")
         session = event['data']['object']
-        customer_email = session['customer_details']['email']
-        subscription_id = session['subscription']
+
+        # Fulfill the purchase...
+        customer_email = session.get('customer_email')
+        subscription_id = session.get('subscription')
         
-        # Find the user by email
         user = User.query.filter_by(email=customer_email).first()
         if user:
-            print(f"Usuário encontrado: {user.email}")
             user.stripe_subscription_id = subscription_id
-
-            # Atualize o plano do usuário com base no subscription ID
-            subscription = stripe.Subscription.retrieve(subscription_id)
-            price_id = subscription['items']['data'][0]['price']['id']
-            print(f"ID do preço: {price_id}")
-
-            if price_id == 'price_1PRMV8P27E94kbegb9WLZxk9':
-                user.plan = 'premium'
-            elif price_id == 'price_1PRMVQP27E94kbegI68UwEpB':
-                user.plan = 'standard'
-            elif price_id == 'price_1PRMWIP27E94kbeg5Zr5gN90':
-                user.plan = 'standard_annual'
-            elif price_id == 'price_1PRMVxP27E94kbeg7VJu5d2n':
-                user.plan = 'premium_annual'
-
+            user.plan = session['display_items'][0]['plan']['id']
             db.session.commit()
-            print("Plano do usuário atualizado")
-        else:
-            print("Usuário não encontrado")
-    elif event['type'] == 'customer.subscription.deleted' or event['type'] == 'customer.subscription.updated':
-        subscription = event['data']['object']
-        customer_id = subscription['customer']
-
-        user = User.query.filter_by(stripe_customer_id=customer_id).first()
-        if user:
-            if subscription['status'] == 'canceled':
-                user.plan = 'free'
-                user.stripe_subscription_id = None
-                db.session.commit()
-                print(f"Plano do usuário {user.email} atualizado para 'free'")
-
-    else:
-        print(f"Evento não tratado: {event['type']}")
+            print(f"Assinatura atualizada para o usuário {user.email}")
 
     return jsonify(success=True)
 
 @app.after_request
 def add_security_headers(response):
-    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline'"
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
-
-@app.errorhandler(CSRFError)
-def handle_csrf_error(e):
-    return jsonify(success=False, error="CSRF token is missing or incorrect."), 400
 
 if __name__ == '__main__':
     with app.app_context():
