@@ -55,7 +55,9 @@ header nav ul li a {
   margin-top: 100px;
 }
 
-h1 {
+h1,
+h2,
+h3 {
   margin-bottom: 20px;
   color: #333;
 }
@@ -152,6 +154,70 @@ button:hover {
   background-color: #0056b3;
 }
 
+.plan-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.plan {
+  background: #fff;
+  border: 1px solid #ddd;
+  margin: 10px;
+  padding: 20px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.plan:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.plan h3 {
+  margin-top: 0;
+}
+
+.plan ul {
+  list-style: none;
+  padding: 0;
+}
+
+.plan ul li {
+  background: #f4f4f4;
+  margin: 5px 0;
+  padding: 10px;
+}
+
+.btn-plan {
+  background: #28a745;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  display: inline-block;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.btn-plan:hover {
+  background: #218838;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
 /* Responsividade */
 @media (max-width: 600px) {
   .content {
@@ -165,4 +231,8 @@ button:hover {
   button {
     width: 70px;
   }
+}
+
+.profile-content {
+  margin-top: 150px;
 }

@@ -1,15 +1,13 @@
-{% extends "base.html" %}
-{% block title %}Profile{% endblock %}
-{% block content %}
-<h1>Profile</h1>
-<form method="POST" action="{{ url_for('profile') }}">
-    <label for="plan">Select Plan:</label>
-    <select id="plan" name="plan">
-        <option value="free" {% if current_user.plan == 'free' %}selected{% endif %}>Free</option>
-        <option value="normal" {% if current_user.plan == 'normal' %}selected{% endif %}>Standard</option>
-        <option value="premium" {% if current_user.plan == 'premium' %}selected{% endif %}>Premium</option>
-        <option value="unlimited" {% if current_user.plan == 'unlimited' %}selected{% endif %}>Unlimited</option>
-    </select>
-    <button type="submit">Update Plan</button>
-</form>
+{% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
+%}
+<div class="content profile-content">
+  <h2>Perfil do Usuário</h2>
+  <p><strong>Email:</strong> {{ current_user.email }}</p>
+  <p><strong>Plano Atual:</strong> {{ current_user.plan }}</p>
+
+  <h3>Atualize Seu Plano</h3>
+  <ul>
+    <li><a href="{{ url_for('plans') }}">Ver Planos</a></li>
+  </ul>
+</div>
 {% endblock %}
