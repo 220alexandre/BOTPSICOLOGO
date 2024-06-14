@@ -1,14 +1,14 @@
 import os
+import stripe
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from senha import SECRET_KEY, SQLALCHEMY_DATABASE_URI, API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY
-import stripe
+from senha import SECRET_KEY, SQLALCHEMY_DATABASE_URI, API_KEY, STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -72,7 +72,29 @@ def login():
 @app.route('/plans')
 @login_required
 def plans():
-    return render_template('plans.html')
+    return render_template('plans.html', key=STRIPE_PUBLISHABLE_KEY)
+
+@app.route('/create-checkout-session', methods=['POST'])
+@login_required
+def create_checkout_session():
+    data = request.get_json()
+    plan_id = data.get('plan_id')
+    
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': plan_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=url_for('profile', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('profile', _external=True),
+            customer_email=current_user.email
+        )
+        return jsonify({'id': session.id})
+    except Exception as e:
+        return jsonify(error=str(e)), 403
 
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
@@ -96,7 +118,30 @@ def profile():
         current_user.plan = plan
         db.session.commit()
         flash('Plan updated successfully.')
-    return render_template('profile.html')
+    plan_names = {
+        'free': 'Grátis',
+        'standard': 'Padrão Mensal',
+        'premium': 'Premium Mensal',
+        'standard_annual': 'Padrão Anual',
+        'premium_annual': 'Premium Anual'
+    }
+    return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'))
+
+@app.route('/cancel_subscription', methods=['POST'])
+@login_required
+def cancel_subscription():
+    try:
+        if current_user.stripe_subscription_id:
+            stripe.Subscription.delete(current_user.stripe_subscription_id)
+            current_user.plan = 'free'
+            current_user.stripe_subscription_id = None
+            db.session.commit()
+            flash('Assinatura cancelada com sucesso.')
+        else:
+            flash('Você não tem uma assinatura ativa para cancelar.')
+    except Exception as e:
+        flash(f'Erro ao cancelar a assinatura: {str(e)}')
+    return redirect(url_for('profile'))
 
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
@@ -107,7 +152,7 @@ def chat():
         print(f"Recebido do usuário: {user_message}")
 
         # Verificação do plano do usuário
-        plan_limits = {'free': 300, 'standard': 5000, 'premium': 10000}
+        plan_limits = {'free': 300, 'standard': 5000, 'premium': 10000, 'standard_annual': 5000, 'premium_annual': 10000}
         if current_user.token_usage >= plan_limits[current_user.plan]:
             return jsonify({"error": "Token limit exceeded for your plan."})
 
@@ -148,6 +193,83 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/webhook', methods=['POST'])
+@csrf.exempt  # Desabilitar CSRF para esta rota
+def stripe_webhook():
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get('Stripe-Signature')
+    endpoint_secret = STRIPE_WEBHOOK_SECRET
+
+    print("Recebendo webhook...")
+    print(f"Payload: {payload}")
+    print(f"Signature Header: {sig_header}")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+        print(f"Evento construído: {event}")
+    except ValueError as e:
+        # Invalid payload
+        print("Payload inválido", e)
+        return jsonify(success=False), 400
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        print("Assinatura inválida", e)
+        return jsonify(success=False), 400
+    except Exception as e:
+        # General exception handler for any other errors
+        print("Erro geral ao processar o webhook", e)
+        return jsonify(success=False), 400
+
+    # Handle the event
+    if event['type'] == 'checkout.session.completed':
+        print("Evento checkout.session.completed recebido")
+        session = event['data']['object']
+        customer_email = session['customer_details']['email']
+        subscription_id = session['subscription']
+        
+        # Find the user by email
+        user = User.query.filter_by(email=customer_email).first()
+        if user:
+            print(f"Usuário encontrado: {user.email}")
+            user.stripe_subscription_id = subscription_id
+
+            # Atualize o plano do usuário com base no subscription ID
+            subscription = stripe.Subscription.retrieve(subscription_id)
+            price_id = subscription['items']['data'][0]['price']['id']
+            print(f"ID do preço: {price_id}")
+
+            if price_id == 'price_1PRMV8P27E94kbegb9WLZxk9':
+                user.plan = 'premium'
+            elif price_id == 'price_1PRMVQP27E94kbegI68UwEpB':
+                user.plan = 'standard'
+            elif price_id == 'price_1PRMWIP27E94kbeg5Zr5gN90':
+                user.plan = 'standard_annual'
+            elif price_id == 'price_1PRMVxP27E94kbeg7VJu5d2n':
+                user.plan = 'premium_annual'
+
+            db.session.commit()
+            print("Plano do usuário atualizado")
+        else:
+            print("Usuário não encontrado")
+    elif event['type'] == 'customer.subscription.deleted' or event['type'] == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        customer_id = subscription['customer']
+
+        user = User.query.filter_by(stripe_customer_id=customer_id).first()
+        if user:
+            if subscription['status'] == 'canceled':
+                user.plan = 'free'
+                user.stripe_subscription_id = None
+                db.session.commit()
+                print(f"Plano do usuário {user.email} atualizado para 'free'")
+
+    else:
+        print(f"Evento não tratado: {event['type']}")
+
+    return jsonify(success=True)
+
 @app.after_request
 def add_security_headers(response):
     response.headers['Content-Security-Policy'] = "default-src 'self'"
@@ -155,6 +277,10 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return jsonify(success=False, error="CSRF token is missing or incorrect."), 400
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,13 +1,12 @@
 {% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
 %}
-<div class="content profile-content">
-  <h2>Perfil do Usuário</h2>
-  <p><strong>Email:</strong> {{ current_user.email }}</p>
-  <p><strong>Plano Atual:</strong> {{ current_user.plan }}</p>
+<h2>Perfil do Usuário</h2>
+<p>Email: {{ current_user.email }}</p>
+<p>Plano atual: {{ plan_name }}</p>
 
-  <h3>Atualize Seu Plano</h3>
-  <ul>
-    <li><a href="{{ url_for('plans') }}">Ver Planos</a></li>
-  </ul>
-</div>
-{% endblock %}
+{% if current_user.plan != 'free' %}
+<form action="{{ url_for('cancel_subscription') }}" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <button type="submit" class="btn btn-danger">Cancelar Assinatura</button>
+</form>
+{% endif %} {% endblock %}
