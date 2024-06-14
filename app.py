@@ -219,7 +219,6 @@ system_instruction = (
 def chat():
     if request.method == 'POST':
         user_message = request.json.get('message')
-        print(f"Recebido do usuário: {user_message}")
 
         # Verificação do plano do usuário
         plan_limits = {'free': 300, 'standard': 5000, 'premium': 10000, 'standard_annual': 5000, 'premium_annual': 10000}
@@ -237,13 +236,11 @@ def chat():
 
         # Enviando a requisição para a API da OpenAI
         req = requests.post(link, headers=headers, data=json.dumps(body_msg))
-        print(f"Requisição enviada para OpenAI")
 
         # Verificando a resposta
         if req.status_code == 200:
             response = req.json()
             response_message = response['choices'][0]['message']['content']
-            print(f"Resposta da OpenAI: {response_message}")
 
             # Atualizando o uso de tokens do usuário
             token_count = sum(len(message['content']) for message in body_msg['messages'])
@@ -252,8 +249,6 @@ def chat():
 
             return jsonify({"response": response_message})
         else:
-            print(f"Erro na requisição: {req.status_code}")
-            print(req.text)
             return jsonify({"error": "Erro na requisição"}), req.status_code
     return render_template('chat.html')
 
@@ -270,10 +265,6 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
     endpoint_secret = STRIPE_WEBHOOK_SECRET
 
-    print("Recebendo webhook...")
-    print(f"Payload: {payload}")
-    print(f"Signature Header: {sig_header}")
-
     event = None
     try:
         event = stripe.Webhook.construct_event(
@@ -281,11 +272,9 @@ def stripe_webhook():
         )
     except ValueError as e:
         # Invalid payload
-        print(f"Erro de payload inválido: {str(e)}")
         return jsonify(success=False), 400
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
-        print(f"Erro de verificação de assinatura: {str(e)}")
         return jsonify(success=False), 400
 
     # Handle the event
@@ -301,7 +290,6 @@ def stripe_webhook():
             user.stripe_subscription_id = subscription_id
             user.plan = session['display_items'][0]['plan']['id']
             db.session.commit()
-            print(f"Assinatura atualizada para o usuário {user.email}")
 
     return jsonify(success=True)
 
