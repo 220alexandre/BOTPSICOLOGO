@@ -30,7 +30,7 @@ async function sendMessage(event) {
   } else {
     // Exibindo a resposta do bot
     const botMessageDiv = document.createElement("div");
-    botMessageDiv.textContent = `Bot: ${data.response}`;
+    botMessageDiv.textContent = `Resposta: ${data.response}`;
     messagesDiv.appendChild(botMessageDiv);
 
     // Limpando o campo de entrada

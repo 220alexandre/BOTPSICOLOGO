@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Meu Aplicativo{% endblock %}</title>
+    <title>{% block title %}{% endblock %}</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
@@ -13,6 +13,7 @@
     <header class="bg-primary text-white p-3">
       <nav class="container">
         <ul class="nav">
+          {% if current_user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link text-white" href="{{ url_for('chat') }}">Chat</a>
           </li>
@@ -26,11 +27,56 @@
               >Planos</a
             >
           </li>
+          {% if current_user.is_admin %}
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle text-white"
+              href="#"
+              id="adminDropdown"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              Admin
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+              <li>
+                <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"
+                  >Painel Admin</a
+                >
+              </li>
+              <li>
+                <a class="dropdown-item" href="{{ url_for('create_company') }}"
+                  >Criar Empresa</a
+                >
+              </li>
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('create_custom_plan') }}"
+                  >Criar Plano de Empresa</a
+                >
+              </li>
+            </ul>
+          </li>
+          {% endif %}
           <li class="nav-item">
             <a class="nav-link text-white" href="{{ url_for('logout') }}"
               >Logout</a
             >
           </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('login') }}"
+              >Login</a
+            >
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-white" href="{{ url_for('register') }}"
+              >Register</a
+            >
+          </li>
+          {% endif %}
         </ul>
       </nav>
     </header>

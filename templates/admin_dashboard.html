@@ -1,42 +1,102 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Painel de Administração</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
-    />
-  </head>
-  <body>
-    <div class="container mt-5">
-      <h1>Painel de Administração</h1>
-      <a href="{{ url_for('create_company') }}" class="btn btn-primary mb-3"
-        >Criar Empresa</a
-      >
-      <a href="{{ url_for('create_custom_plan') }}" class="btn btn-primary mb-3"
-        >Criar Plano Personalizado</a
-      >
-      <h2>Empresas</h2>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Limite de Tokens</th>
-            <th>Limite de Usuários</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for company in companies %}
-          <tr>
-            <td>{{ company.name }}</td>
-            <td>{{ company.token_limit }}</td>
-            <td>{{ company.user_limit }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </body>
-</html>
+{% extends "base.html" %} {% block title %}Painel administrativo{% endblock %}
+{% block content %}
+<h1>Painel administrativo</h1>
+<div class="container mt-5">
+  <h3>Administar Usários</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Plano</th>
+        <th>Tokens Usados</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.plan }}</td>
+        <td>{{ user.token_usage }}</td>
+        <td>
+          {% if user.stripe_subscription_id %}
+          <form
+            action="{{ url_for('admin_cancel_subscription', user_id=user.id) }}"
+            method="post"
+            style="display: inline"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn btn-danger btn-sm">
+              Cancelar Assinatura
+            </button>
+          </form>
+          {% else %}
+          <span>N/A</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<hr />
+<table class="table">
+  <h3>Administrar Empresas</h3>
+  <thead>
+    <tr>
+      <th>Nome da Empresa</th>
+      <th>Limite de Usuários</th>
+      <th>Limite de Tokens</th>
+      <th>Gerenciar</th>
+      <th>Adcionar Funcionários</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for company in companies %}
+    <tr>
+      <td>{{ company.name }}</td>
+      <td>{{ company.user_limit }}</td>
+      <td>{{ company.token_limit }}</td>
+      <td>
+        <a
+          href="{{ url_for('manage_company', company_id=company.id) }}"
+          class="btn btn-sm btn-warning"
+          >Gerenciar</a
+        >
+      </td>
+      <td>
+        <a
+          href="{{ url_for('manage_employees', company_id=company.id) }}"
+          class="btn btn-sm btn-success"
+          >Adcionar Funcionários</a
+        >
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<hr />
+<table class="table">
+  <h3 class="mt-5">Funcionários Atuais</h3>
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Email</th>
+      <th>Tokens Usados</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for employee in employees %}
+    <tr>
+      <td>{{ employee.name }}</td>
+      <td>{{ employee.email }}</td>
+      <td>{{ employee.token_usage }}</td>
+      <td>{{ employee.company_id }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

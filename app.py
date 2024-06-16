@@ -47,9 +47,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -187,17 +184,21 @@ def login():
 @login_required
 def plans():
     return render_template('plans.html')
-
+#admin dashboard
 # Adicione a rota para o painel de administração
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin_dashboard')
 @login_required
-def admin_panel():
+def admin_dashboard():
     if not current_user.is_admin:
-        flash('Acesso negado.')
+        flash('Acesso negado. Somente administradores podem acessar esta página.')
         return redirect(url_for('home'))
-
+    companies = Company.query.all()
     users = User.query.all()
-    return render_template('admin.html', users=users)
+    employers = Employee.query.all()
+    return render_template('admin_dashboard.html', 
+                            companies=companies,
+                            users=users,
+                            employees=employers)
 
 @app.route('/admin/cancel_subscription/<user_id>', methods=['POST'])
 @login_required
@@ -218,42 +219,37 @@ def admin_cancel_subscription(user_id):
             flash(f'Ocorreu um erro ao cancelar a assinatura: {str(e)}')
     return redirect(url_for('admin_panel'))
 
-@app.route('/admin/company/<int:company_id>', methods=['GET', 'POST'])
-@login_required
-def manage_company(company_id):
-    if not current_user.is_admin:
-        flash('Access denied.')
-        return redirect(url_for('home'))
-    company = Company.query.get_or_404(company_id)
-    if request.method == 'POST':
-        company.plan = request.form.get('plan')
-        company.token_limit = int(request.form.get('token_limit'))
-        company.monthly_cost = int(request.form.get('monthly_cost'))
-        db.session.commit()
-        flash('Company updated successfully.')
-        return redirect(url_for('admin_dashboard'))
-    return render_template('manage_company.html', company=company)
-
-@app.route('/create-company', methods=['GET', 'POST'])
+@app.route('/create_company', methods=['GET', 'POST'])
 @login_required
 def create_company():
     if not current_user.is_admin:
-        flash('Apenas administradores podem criar empresas.')
-        return redirect(url_for('profile'))
-
+        flash('Acesso negado. Somente administradores podem acessar esta página.')
+        return redirect(url_for('home'))
+    
     if request.method == 'POST':
         name = request.form.get('name')
-        token_limit = request.form.get('token_limit', type=int)
-        user_limit = request.form.get('user_limit', type=int)
-
-        company = Company(name=name, token_limit=token_limit, user_limit=user_limit)
-        db.session.add(company)
+        user_limit = request.form.get('user_limit')
+        token_limit = request.form.get('token_limit')
+        monthly_cost = request.form.get('monthly_cost')
+        
+        new_company = Company(name=name, user_limit=user_limit, token_limit=token_limit, monthly_cost=monthly_cost)
+        db.session.add(new_company)
         db.session.commit()
+        
         flash('Empresa criada com sucesso.')
         return redirect(url_for('admin_dashboard'))
-
+    
     return render_template('create_company.html')
 
+@app.route('/manage_company/<int:company_id>', methods=['GET', 'POST'])
+@login_required
+def manage_company(company_id):
+    if not current_user.is_admin:
+        flash('Acesso negado. Somente administradores podem acessar esta página.')
+        return redirect(url_for('home'))
+    
+    company = Company.query.get_or_404(company_id)
+    return render_template('manage_company.html', company=company)
 @app.route('/remove_employee/<int:employee_id>', methods=['POST'])
 @login_required
 def remove_employee(employee_id):
@@ -267,16 +263,6 @@ def remove_employee(employee_id):
     flash("Empregado removido com sucesso.")
     return redirect(url_for('profile'))
 
-
-@app.route('/admin-dashboard')
-@login_required
-def admin_dashboard():
-    if not current_user.is_admin:
-        flash('Apenas administradores podem acessar o painel de administração.')
-        return redirect(url_for('profile'))
-
-    companies = Company.query.all()
-    return render_template('admin_dashboard.html', companies=companies)
 
 @app.route('/company/<int:company_id>/employees', methods=['GET', 'POST'])
 @login_required
@@ -321,6 +307,36 @@ def create_custom_plan():
     return render_template('create_custom_plan.html', companies=companies)
 
 
+@app.route('/update_company/<int:company_id>', methods=['POST'])
+@login_required
+def update_company(company_id):
+    if not current_user.is_admin:
+        flash('Acesso negado. Somente administradores podem acessar esta página.')
+        return redirect(url_for('home'))
+    
+    company = Company.query.get_or_404(company_id)
+    company.plan = request.form.get('plan')
+    company.token_limit = request.form.get('token_limit')
+    company.monthly_cost = request.form.get('monthly_cost')
+    db.session.commit()
+    
+    flash('Empresa atualizada com sucesso.')
+    return redirect(url_for('manage_company', company_id=company_id))
+
+@app.route('/delete_company/<int:company_id>', methods=['POST'])
+@login_required
+def delete_company(company_id):
+    if not current_user.is_admin:
+        flash('Acesso negado. Somente administradores podem acessar esta página.')
+        return redirect(url_for('home'))
+    
+    company = Company.query.get_or_404(company_id)
+    db.session.delete(company)
+    db.session.commit()
+    
+    flash('Empresa deletada com sucesso.')
+    return redirect(url_for('admin_dashboard'))
+#fim admin
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():

@@ -1,10 +1,18 @@
-{% extends "base.html" %} {% block title %}Criar Empresa{% endblock %} {% block
+{% extends "base.html" %} {% block title %}Editar Empresa{% endblock %} {% block
 content %}
-<h1>Criar Empresa</h1>
-<form method="POST" action="{{ url_for('create_company') }}">
+<h1>Editar Empresa</h1>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <div class="mb-3">
     <label for="name" class="form-label">Nome da Empresa</label>
-    <input type="text" class="form-control" id="name" name="name" required />
+    <input
+      type="text"
+      class="form-control"
+      id="name"
+      name="name"
+      value="{{ company.name }}"
+      required
+    />
   </div>
   <div class="mb-3">
     <label for="user_limit" class="form-label">Limite de Usuários</label>
@@ -13,6 +21,7 @@ content %}
       class="form-control"
       id="user_limit"
       name="user_limit"
+      value="{{ company.user_limit }}"
       required
     />
   </div>
@@ -23,19 +32,11 @@ content %}
       class="form-control"
       id="token_limit"
       name="token_limit"
+      value="{{ company.token_limit }}"
       required
     />
   </div>
-  <div class="mb-3">
-    <label for="monthly_cost" class="form-label">Custo Mensal</label>
-    <input
-      type="number"
-      class="form-control"
-      id="monthly_cost"
-      name="monthly_cost"
-      required
-    />
-  </div>
-  <button type="submit" class="btn btn-primary">Criar</button>
+  <button type="submit" class="btn btn-primary">Salvar</button>
 </form>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 {% endblock %}

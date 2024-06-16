@@ -1,63 +1,25 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gerenciar Funcionários</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
-    />
-  </head>
-  <body>
-    <div class="container mt-5">
-      <h1>Gerenciar Funcionários</h1>
-      <h2>{{ company.name }}</h2>
-      <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <div class="mb-3">
-          <label for="name" class="form-label">Nome do Funcionário</label>
-          <input
-            type="text"
-            class="form-control"
-            id="name"
-            name="name"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <label for="email" class="form-label">Email do Funcionário</label>
-          <input
-            type="email"
-            class="form-control"
-            id="email"
-            name="email"
-            required
-          />
-        </div>
-        <button type="submit" class="btn btn-primary">
-          Adicionar Funcionário
-        </button>
-      </form>
-      <h3 class="mt-5">Funcionários Atuais</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Email</th>
-            <th>Tokens Usados</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for employee in employees %}
-          <tr>
-            <td>{{ employee.name }}</td>
-            <td>{{ employee.email }}</td>
-            <td>{{ employee.token_usage }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% extends "base.html" %} {% block title %}Gerenciar Funcionários{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h1>Gerenciar Funcionários</h1>
+  <h2>{{ company.name }}</h2>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="mb-3">
+      <label for="name" class="form-label">Nome do Funcionário</label>
+      <input type="text" class="form-control" id="name" name="name" required />
     </div>
-  </body>
-</html>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email do Funcionário</label>
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        name="email"
+        required
+      />
+    </div>
+    <button type="submit" class="btn btn-primary">Adicionar Funcionário</button>
+  </form>
+</div>
+{% endblock %}

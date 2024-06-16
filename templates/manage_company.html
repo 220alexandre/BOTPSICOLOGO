@@ -37,4 +37,11 @@ content %}
   </div>
   <button type="submit" class="btn btn-primary">Update</button>
 </form>
+<form
+  method="POST"
+  action="{{ url_for('delete_company', company_id=company.id) }}"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <button type="submit" class="btn btn-danger mt-3">Delete Company</button>
+</form>
 {% endblock %}
