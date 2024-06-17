@@ -5,6 +5,7 @@ content %}
   method="POST"
   action="{{ url_for('update_company', company_id=company.id) }}"
 >
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <div class="mb-3">
     <label for="plan" class="form-label">Plan</label>
     <input

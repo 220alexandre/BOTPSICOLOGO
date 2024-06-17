@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
 %}
+
 <div class="container mt-5">
   <h1>Perfil do Usuário</h1>
   <p>Email: {{ current_user.email }}</p>
@@ -7,11 +8,12 @@
   <p>Data de Registro: {{ current_user.registration_date }}</p>
   <p>Plano atual: {{ plan_name }}</p>
   <p>
-    Limite de tokens: {{ plan_limits.get(current_user.plan, 'Desconhecido') }}
+    Limite de tokens: {{current_user.token_limit +
+    plan_limits.get(current_user.plan, 'Desconhecido') }}
   </p>
   <p>Tokens utilizados: {{ current_user.token_usage }}</p>
-
   {% if current_user.company %}
+
   <h2>Informações da Empresa</h2>
   <p>Empresa: {{ current_user.company.name }}</p>
   <p>
@@ -19,7 +21,6 @@
     }}
   </p>
   <p>Limite de tokens da empresa: {{ current_user.company.token_limit }}</p>
-
   <h3>Empregados</h3>
   <ul>
     {% for employee in current_user.company.employees %}
