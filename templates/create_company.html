@@ -2,6 +2,7 @@
 content %}
 <h1>Criar Empresa</h1>
 <form method="POST" action="{{ url_for('create_company') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <div class="mb-3">
     <label for="name" class="form-label">Nome da Empresa</label>
     <input type="text" class="form-control" id="name" name="name" required />
@@ -26,16 +27,7 @@ content %}
       required
     />
   </div>
-  <div class="mb-3">
-    <label for="monthly_cost" class="form-label">Custo Mensal</label>
-    <input
-      type="number"
-      class="form-control"
-      id="monthly_cost"
-      name="monthly_cost"
-      required
-    />
-  </div>
+
   <button type="submit" class="btn btn-primary">Criar</button>
 </form>
 {% endblock %}

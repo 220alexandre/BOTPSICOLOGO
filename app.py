@@ -343,17 +343,26 @@ def chat():
     if request.method == 'POST':
         user_message = request.json.get('message')
 
+        # Definição do limite de tokens por plano
+        plan_limits = {
+            'free': 300,
+            'standard': 5000,
+            'premium': 10000,
+            'standard_annual': 5000,
+            'premium_annual': 10000
+        }
+
         # Verificação do plano do usuário ou da empresa
         if current_user.company_id:
             company = Company.query.get(current_user.company_id)
-            plan_limits = company.token_limit
+            total_limit = plan_limits.get(current_user.plan, 0) + company.token_limit
             token_usage = company.current_token_usage
         else:
-            plan_limits = current_user.token_limit
+            total_limit = plan_limits.get(current_user.plan, 0) + current_user.token_limit
             token_usage = current_user.token_usage
 
-        if token_usage >= plan_limits:
-            return jsonify({"error": "Limite de tokens atingido, por favor, atualize seu plano ou compre mais tokens."})
+        if token_usage >= total_limit:
+            return jsonify({"error": "Token limit exceeded for your plan."})
 
         # Corpo da mensagem
         body_msg = {
@@ -384,6 +393,7 @@ def chat():
         else:
             return jsonify({"error": "Erro na requisição"}), req.status_code
     return render_template('chat.html')
+
     
 @app.route('/logout')
 @login_required
@@ -519,9 +529,8 @@ def create_company():
         name = request.form.get('name')
         user_limit = request.form.get('user_limit')
         token_limit = request.form.get('token_limit')
-        monthly_cost = request.form.get('monthly_cost')
         
-        new_company = Company(name=name, user_limit=user_limit, token_limit=token_limit, monthly_cost=monthly_cost)
+        new_company = Company(name=name, user_limit=user_limit, token_limit=token_limit)
         db.session.add(new_company)
         db.session.commit()
         
