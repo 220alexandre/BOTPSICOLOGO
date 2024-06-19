@@ -44,9 +44,8 @@
               role="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
+              >Admin</a
             >
-              Admin
-            </a>
             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
               <li>
                 <a
@@ -73,24 +72,18 @@
           </li>
           {% endif %}
           <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{{ url_for('auth_routes.logout') }}"
+            <a class="nav-link text-white" href="{{ url_for('auth.logout') }}"
               >Logout</a
             >
           </li>
           {% else %}
           <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{{ url_for('auth_routes.login') }}"
+            <a class="nav-link text-white" href="{{ url_for('auth.login') }}"
               >Login</a
             >
           </li>
           <li class="nav-item">
-            <a
-              class="nav-link text-white"
-              href="{{ url_for('auth_routes.register') }}"
+            <a class="nav-link text-white" href="{{ url_for('auth.register') }}"
               >Register</a
             >
           </li>
