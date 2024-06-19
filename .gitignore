@@ -5,3 +5,6 @@
 /teste.py
 /__pycache__
 /venv
+/app/__pycache__
+/app/utils/__pycache__
+/app/routes/__pycache__

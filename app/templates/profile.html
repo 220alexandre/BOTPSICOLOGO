@@ -8,7 +8,7 @@
   <p>Data de Registro: {{ current_user.registration_date }}</p>
   <p>Plano atual: {{ plan_name }}</p>
   <p>
-    Limite de tokens: {{current_user.token_limit +
+    Limite de tokens: {{ current_user.token_limit +
     plan_limits.get(current_user.plan, 'Desconhecido') }}
   </p>
   <p>Tokens utilizados: {{ current_user.token_usage }}</p>
@@ -28,7 +28,7 @@
       {{ employee.name }} ({{ employee.email }})
       <form
         method="post"
-        action="{{ url_for('remove_employee', employee_id=employee.id) }}"
+        action="{{ url_for('auth.remove_employee', employee_id=employee.id) }}"
         style="display: inline"
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -38,7 +38,7 @@
     {% endfor %}
   </ul>
   {% endif %} {% if current_user.plan != 'free' %}
-  <form method="post" action="{{ url_for('cancel_subscription') }}">
+  <form method="post" action="{{ url_for('auth.cancel_subscription') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <button type="submit" class="btn btn-danger">Cancelar Assinatura</button>
   </form>

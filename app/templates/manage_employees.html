@@ -1,0 +1,58 @@
+{% extends "base.html" %} {% block title %}Manage Employees{% endblock %} {%
+block content %}
+<h1>Gerenciar Funcionários</h1>
+<div class="container mt-5">
+  <h3>Adicionar Novo Funcionário</h3>
+  <form method="POST" action="{{ url_for('admin_routes.add_employee') }}">
+    <div class="mb-3">
+      <label for="name" class="form-label">Nome</label>
+      <input type="text" class="form-control" id="name" name="name" required />
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input
+        type="email"
+        class="form-control"
+        id="email"
+        name="email"
+        required
+      />
+    </div>
+    <input type="hidden" name="company_id" value="{{ company.id }}" />
+    <button type="submit" class="btn btn-primary">Adicionar Funcionário</button>
+  </form>
+
+  <hr />
+
+  <h3>Funcionários Atuais</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Tokens Usados</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for employee in employees %}
+      <tr>
+        <td>{{ employee.name }}</td>
+        <td>{{ employee.email }}</td>
+        <td>{{ employee.token_usage }}</td>
+        <td>
+          <form
+            method="POST"
+            action="{{ url_for('admin_routes.remove_employee', employee_id=employee.id) }}"
+            style="display: inline"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

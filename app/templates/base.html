@@ -15,15 +15,23 @@
         <ul class="nav">
           {% if current_user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('chat') }}">Chat</a>
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('main_routes.chat') }}"
+              >Chat</a
+            >
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('profile') }}"
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('main_routes.profile') }}"
               >Perfil</a
             >
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('plans') }}"
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('main_routes.plans') }}"
               >Planos</a
             >
           </li>
@@ -41,19 +49,23 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="adminDropdown">
               <li>
-                <a class="dropdown-item" href="{{ url_for('admin_dashboard') }}"
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('admin_routes.admin_dashboard') }}"
                   >Painel Admin</a
                 >
               </li>
               <li>
-                <a class="dropdown-item" href="{{ url_for('create_company') }}"
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('admin_routes.create_company') }}"
                   >Criar Empresa</a
                 >
               </li>
               <li>
                 <a
                   class="dropdown-item"
-                  href="{{ url_for('create_custom_plan') }}"
+                  href="{{ url_for('admin_routes.create_custom_plan') }}"
                   >Criar Plano de Empresa</a
                 >
               </li>
@@ -61,18 +73,24 @@
           </li>
           {% endif %}
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('logout') }}"
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('auth_routes.logout') }}"
               >Logout</a
             >
           </li>
           {% else %}
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('login') }}"
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('auth_routes.login') }}"
               >Login</a
             >
           </li>
           <li class="nav-item">
-            <a class="nav-link text-white" href="{{ url_for('register') }}"
+            <a
+              class="nav-link text-white"
+              href="{{ url_for('auth_routes.register') }}"
               >Register</a
             >
           </li>

@@ -1,0 +1,92 @@
+{% extends "base.html" %} {% block title %}Manage Company{% endblock %} {% block
+content %}
+<h1>Gerenciar Empresa</h1>
+<form
+  method="POST"
+  action="{{ url_for('admin_routes.update_company', company_id=company.id) }}"
+>
+  <div class="mb-3">
+    <label for="name" class="form-label">Nome da Empresa</label>
+    <input
+      type="text"
+      class="form-control"
+      id="name"
+      name="name"
+      value="{{ company.name }}"
+      required
+    />
+  </div>
+  <div class="mb-3">
+    <label for="user_limit" class="form-label">Limite de Usuários</label>
+    <input
+      type="number"
+      class="form-control"
+      id="user_limit"
+      name="user_limit"
+      value="{{ company.user_limit }}"
+      required
+    />
+  </div>
+  <div class="mb-3">
+    <label for="token_limit" class="form-label">Limite de Tokens</label>
+    <input
+      type="number"
+      class="form-control"
+      id="token_limit"
+      name="token_limit"
+      value="{{ company.token_limit }}"
+      required
+    />
+  </div>
+  <div class="mb-3">
+    <label for="monthly_cost" class="form-label">Custo Mensal</label>
+    <input
+      type="number"
+      class="form-control"
+      id="monthly_cost"
+      name="monthly_cost"
+      value="{{ company.monthly_cost }}"
+      required
+    />
+  </div>
+  <button type="submit" class="btn btn-primary">Atualizar</button>
+</form>
+
+<hr />
+
+<h3>Funcionários</h3>
+<a
+  href="{{ url_for('admin_routes.manage_employees', company_id=company.id) }}"
+  class="btn btn-success"
+  >Adicionar Funcionário</a
+>
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Email</th>
+      <th>Tokens Usados</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for employee in company.employees %}
+    <tr>
+      <td>{{ employee.name }}</td>
+      <td>{{ employee.email }}</td>
+      <td>{{ employee.token_usage }}</td>
+      <td>
+        <form
+          action="{{ url_for('admin_routes.remove_employee', employee_id=employee.id) }}"
+          method="post"
+          style="display: inline"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

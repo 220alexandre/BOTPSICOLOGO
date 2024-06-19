@@ -23,7 +23,7 @@
         <td>
           {% if user.stripe_subscription_id %}
           <form
-            action="{{ url_for('admin_cancel_subscription', user_id=user.id) }}"
+            action="{{ url_for('admin_routes.admin_cancel_subscription', user_id=user.id) }}"
             method="post"
             style="display: inline"
           >
@@ -61,14 +61,14 @@
       <td>{{ company.token_limit }}</td>
       <td>
         <a
-          href="{{ url_for('manage_company', company_id=company.id) }}"
+          href="{{ url_for('admin_routes.manage_company', company_id=company.id) }}"
           class="btn btn-sm btn-warning"
           >Gerenciar</a
         >
       </td>
       <td>
         <a
-          href="{{ url_for('manage_employees', company_id=company.id) }}"
+          href="{{ url_for('admin_routes.manage_employees', company_id=company.id) }}"
           class="btn btn-sm btn-success"
           >Adcionar Funcionários</a
         >

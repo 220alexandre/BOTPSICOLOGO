@@ -1,9 +1,0 @@
-{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
-%}
-<div class="container text-center mt-5">
-  <h1>Bem-vindo(a)</h1>
-  <p class="lead">Faça o login abaixou o registre-se para continuar</p>
-  <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
-  <a href="{{ url_for('register') }}" class="btn btn-secondary">Registrar</a>
-</div>
-{% endblock %}

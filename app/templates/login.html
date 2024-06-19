@@ -1,13 +1,9 @@
-{% extends "base.html" %} {% block title %}Registrar{% endblock %} {% block
-content %}
+{% extends "base.html" %} {% block title %}Login{% endblock %} {% block content
+%}
 <div class="container mt-5">
-  <h2 class="text-center">Registrar</h2>
-  <form method="POST" class="mt-4">
+  <h1>Login</h1>
+  <form method="post" action="{{ url_for('auth.login') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <div class="mb-3">
-      <label for="name" class="form-label">Nome</label>
-      <input type="text" class="form-control" id="name" name="name" required />
-    </div>
     <div class="mb-3">
       <label for="email" class="form-label">Email</label>
       <input
@@ -19,7 +15,7 @@ content %}
       />
     </div>
     <div class="mb-3">
-      <label for="password" class="form-label">Senha</label>
+      <label for="password" class="form-label">Password</label>
       <input
         type="password"
         class="form-control"
@@ -28,7 +24,7 @@ content %}
         required
       />
     </div>
-    <button type="submit" class="btn btn-primary w-100">Registrar</button>
+    <button type="submit" class="btn btn-primary">Login</button>
   </form>
 </div>
 {% endblock %}
