@@ -1,6 +1,5 @@
 {% extends "base.html" %} {% block title %}Perfil{% endblock %} {% block content
 %}
-
 <div class="container mt-5">
   <h1>Perfil do Usuário</h1>
   <p>Email: {{ current_user.email }}</p>
@@ -13,7 +12,6 @@
   </p>
   <p>Tokens utilizados: {{ current_user.token_usage }}</p>
   {% if current_user.company %}
-
   <h2>Informações da Empresa</h2>
   <p>Empresa: {{ current_user.company.name }}</p>
   <p>
@@ -24,17 +22,7 @@
   <h3>Empregados</h3>
   <ul>
     {% for employee in current_user.company.employees %}
-    <li>
-      {{ employee.name }} ({{ employee.email }})
-      <form
-        method="post"
-        action="{{ url_for('auth.remove_employee', employee_id=employee.id) }}"
-        style="display: inline"
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button type="submit" class="btn btn-danger btn-sm">Remover</button>
-      </form>
-    </li>
+    <li>{{ employee.name }} ({{ employee.email }})</li>
     {% endfor %}
   </ul>
   {% endif %} {% if current_user.plan != 'free' %}
