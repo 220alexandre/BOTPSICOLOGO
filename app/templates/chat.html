@@ -8,8 +8,12 @@
       class="card-body"
       style="height: 400px; overflow-y: auto"
     ></div>
-    <div class="card-footer">
-      <form id="chatForm" onsubmit="sendMessage(event)" class="d-flex">
+    <div class="card-footer d-flex justify-content-between">
+      <form
+        id="chatForm"
+        onsubmit="sendMessage(event)"
+        class="d-flex flex-grow-1 me-2"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input
           type="text"
@@ -22,6 +26,9 @@
           Enviar
         </button>
       </form>
+      <button id="clearButton" class="btn btn-danger" onclick="clearChat()">
+        Limpar Histórico
+      </button>
     </div>
   </div>
 </div>

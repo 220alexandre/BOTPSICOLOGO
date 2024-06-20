@@ -56,3 +56,12 @@ class FileContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(150), nullable=False)
     content = db.Column(LONGTEXT, nullable=False)
+
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(50), nullable=False)  # 'user' ou 'assistant'
+    content = db.Column(LONGTEXT, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('messages', lazy=True))

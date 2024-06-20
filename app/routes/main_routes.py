@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify, flash, current_app
 from flask_login import login_required, current_user
-from app.models import db, Company, User
+from app.models import db, Company, User, FileContent, ChatMessage
 import requests
 import json
 from app.extensions import limiter
@@ -22,7 +22,7 @@ def profile():
         'premium_annual': 'Premium Anual'
     }
     plan_limits = {
-        'free': 300,
+        'free': 1500,
         'standard': 5000,
         'premium': 10000,
         'standard_annual': 5000,
@@ -35,6 +35,13 @@ def profile():
         flash('Plano atualizado com sucesso.')
     return render_template('profile.html', plan_name=plan_names.get(current_user.plan, 'Grátis'), plan_limits=plan_limits)
 
+def get_context():
+    context_records = FileContent.query.all()
+    context = ""
+    for record in context_records:
+        context += f"\n{record.content[:1000]}"  # Limitar a quantidade de conteúdo para evitar excesso de tokens
+    return context
+
 @bp.route('/chat', methods=['GET', 'POST'])
 @login_required
 @limiter.limit("10 per minute")
@@ -44,7 +51,7 @@ def chat():
 
         # Definição do limite de tokens por plano
         plan_limits = {
-            'free': 300,
+            'free': 1500,
             'standard': 5000,
             'premium': 10000,
             'standard_annual': 5000,
@@ -70,11 +77,16 @@ def chat():
             "Content-Type": "application/json"
         }
 
+        # Adicionar contexto à mensagem do usuário
+        context = get_context()
+        prompt = f"{context}\n\nUser: {user_message}\nAssistant:"
+
         # Corpo da mensagem
         body_msg = {
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o",
             "messages": [
-                {"role": "user", "content": user_message}
+                {"role": "system", "content": "Você é um assistente útil."},
+                {"role": "user", "content": prompt}
             ]
         }
 
@@ -86,6 +98,13 @@ def chat():
         if req.status_code == 200:
             response = req.json()
             response_message = response['choices'][0]['message']['content']
+
+            # Salvando a mensagem do usuário e a resposta do assistente no banco de dados
+            user_chat = ChatMessage(user_id=current_user.id, role='user', content=user_message)
+            assistant_chat = ChatMessage(user_id=current_user.id, role='assistant', content=response_message)
+            db.session.add(user_chat)
+            db.session.add(assistant_chat)
+            db.session.commit()
 
             # Atualizando o uso de tokens do usuário ou da empresa
             token_count = sum(len(message['content']) for message in body_msg['messages'])
@@ -99,9 +118,25 @@ def chat():
             return jsonify({"response": response_message})
         else:
             return jsonify({"error": "Erro na requisição"}), req.status_code
-    return render_template('chat.html')
-
+    else:
+        return render_template('chat.html')
 @bp.route('/plans')
 @login_required
 def plans():
     return render_template('plans.html')
+
+
+@bp.route('/chat/history', methods=['GET'])
+@login_required
+def chat_history():
+    messages = ChatMessage.query.filter_by(user_id=current_user.id).all()
+    chat_history = [{"role": msg.role, "content": msg.content} for msg in messages]
+    return jsonify({"messages": chat_history})
+
+
+@bp.route('/chat/clear', methods=['POST'])
+@login_required
+def clear_chat_history():
+    ChatMessage.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({"message": "Histórico de chat limpo com sucesso."})
