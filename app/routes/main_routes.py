@@ -83,11 +83,12 @@ def chat():
 
         # Corpo da mensagem
         body_msg = {
-            "model": "gpt-4o",
+            "model": "gpt-3.5-turbo",
             "messages": [
-                {"role": "system", "content": "Você é um assistente útil."},
+                {"role": "system", "content": "Você é um Psicólogo bem experiente na conversação usando a comunicação nao violenta."},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            "max_tokens": 138
         }
 
         link = 'https://api.openai.com/v1/chat/completions'
