@@ -19,7 +19,7 @@ async function loadChatHistory() {
     data.messages.forEach((message) => {
       const messageDiv = document.createElement("div");
       messageDiv.textContent = `${
-        message.role === "user" ? "Você" : "Assistente"
+        message.role === "user" ? "Você" : "<b>Assistente</b>"
       }: ${message.content}`;
       messagesDiv.appendChild(messageDiv);
     });
