@@ -18,13 +18,14 @@ async function loadChatHistory() {
   if (data.messages) {
     data.messages.forEach((message) => {
       const messageDiv = document.createElement("div");
-      messageDiv.textContent = `${
+      messageDiv.innerHTML = `${
         message.role === "user" ? "Você" : "<b>Assistente</b>"
       }: ${message.content}`;
       messagesDiv.appendChild(messageDiv);
     });
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
+
 }
 
 async function sendMessage(event) {
