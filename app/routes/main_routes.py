@@ -19,14 +19,16 @@ def profile():
         'standard': 'Padrão Mensal',
         'premium': 'Premium Mensal',
         'standard_annual': 'Padrão Anual',
-        'premium_annual': 'Premium Anual'
+        'premium_annual': 'Premium Anual',
+        'unlimited': 'Ilimitado'  # Nome do plano ilimitado
     }
     plan_limits = {
         'free': 1500,
         'standard': 5000,
         'premium': 10000,
         'standard_annual': 5000,
-        'premium_annual': 10000
+        'premium_annual': 10000,
+        'unlimited': float('inf')
     }
     if request.method == 'POST':
         plan = request.form.get('plan')
@@ -55,16 +57,23 @@ def chat():
             'standard': 5000,
             'premium': 10000,
             'standard_annual': 5000,
-            'premium_annual': 10000
+            'premium_annual': 10000,
+            'unlimited': float('inf')
         }
 
         # Verificação do plano do usuário ou da empresa
         if current_user.company_id:
             company = Company.query.get(current_user.company_id)
-            total_limit = plan_limits.get(current_user.plan, 0) + company.token_limit
+            if current_user.plan == 'unlimited':
+                total_limit = float('inf')  # Limite ilimitado para o plano de empresa ilimitado
+            else:
+                total_limit = plan_limits.get(current_user.plan, 0) + company.token_limit
             token_usage = company.current_token_usage
         else:
-            total_limit = plan_limits.get(current_user.plan, 0) + current_user.token_limit
+            if current_user.plan == 'unlimited':
+                total_limit = float('inf')
+            else:
+                total_limit = plan_limits.get(current_user.plan, 0) + current_user.token_limit
             token_usage = current_user.token_usage
 
         if token_usage >= total_limit:
@@ -83,7 +92,7 @@ def chat():
 
         # Corpo da mensagem
         body_msg = {
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-4o-mini",
             "messages": [
                 {"role": "system", "content": "Você é um Psicólogo bem experiente na conversação usando a comunicação nao violenta."},
                 {"role": "user", "content": prompt}
