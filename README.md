@@ -115,25 +115,23 @@ Database (MySQL)
 
 ## Installation
 
-### 1. Clone the repository
-
+📌 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/BOTPSICOLOGO.git
+git clone https://github.com/220alexandre/BOTPSICOLOGO.git
 cd BOTPSICOLOGO
-
 ```
-
-### 2. Create and activate virtual environment
+📌 2. Create and activate virtual environment
 ```bash
 python -m venv venv
 venv\Scripts\activate
 ```
-### 3. Install dependencies
+📌 3. Install project dependencies
 ```bash
 pip install -r requirements.txt
 ```
-Create a .env file in the project root directory:
+📌 4. Create .env file
 
+Create a .env file in the project root with the following:
 ```bash
 SECRET_KEY=your_secret_key_here
 DATABASE_URL=mysql+pymysql://root:your_password@localhost/botpsicologo
@@ -145,39 +143,41 @@ STRIPE_WEBHOOK_SECRET=your_webhook_secret
 
 REDIS_URL=redis://localhost:6379/0
 ```
-⚠️ Important:
+💡 Do not push the .env file to GitHub — sensitive keys must stay local.
 
-Never commit your .env file.
+📌 5. Create the MySQL database
 
-Make sure .env is included in .gitignore.
-### 4. Configure the database
--Create a MySQL database:
+In your MySQL server (e.g., phpMyAdmin or terminal):
 ```bash
 CREATE DATABASE botpsicologo;
 ```
-Update your configuration (config.py or .env):
+Make sure the DATABASE_URL in your .env matches the database name.
 
-- SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:@localhost/botpsicologo
-
-### 5. Run migrations
+📌 6. Run Migrations
 ```bash
 flask db migrate -m "Initial migration"
 flask db upgrade
 ```
+This creates all tables based on your models.
 
-### 6. Ensure Redis is running
+📌 7. Ensure Redis is running
+
 Default configuration:
-
 ```bash
-redis://localhost:6379
+redis://localhost:6379/0
 ```
-### 7. Run the application
+Redis is required for rate limiting and certain scheduler features.
+
+📌 8. Run the application
 ```bash
 flask run
 ```
-### File Processing
+The backend will start locally.
+You can now access admin and API routes as documented.
 
-To load supported documents from the files directory into the database:
+📂 File Processing
+
+To load documents from the files directory into the database:
 ```bash
 python -m app.utils.file_loader
 ```
@@ -189,7 +189,7 @@ Supported formats:
 
 - HTML
 
-Extracted content is stored in the database for further processing.
+Extracted text is stored in the database.
 
 ### Project Structure
 ```bash
