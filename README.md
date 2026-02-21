@@ -132,6 +132,24 @@ venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
+Create a .env file in the project root directory:
+
+```bash
+SECRET_KEY=your_secret_key_here
+DATABASE_URL=mysql+pymysql://root:your_password@localhost/botpsicologo
+API_KEY=your_openai_api_key_here
+
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
+
+REDIS_URL=redis://localhost:6379/0
+```
+⚠️ Important:
+
+Never commit your .env file.
+
+Make sure .env is included in .gitignore.
 ### 4. Configure the database
 -Create a MySQL database:
 ```bash
