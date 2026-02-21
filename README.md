@@ -139,7 +139,7 @@ CREATE DATABASE botpsicologo;
 ```
 Update your configuration (config.py or .env):
 
-SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:@localhost/botpsicologo
+- SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:@localhost/botpsicologo
 
 ### 5. Run migrations
 ```bash
@@ -165,11 +165,11 @@ python -m app.utils.file_loader
 ```
 Supported formats:
 
-PDF
+- PDF
 
-DOCX
+- DOCX
 
-HTML
+- HTML
 
 Extracted content is stored in the database for further processing.
 
