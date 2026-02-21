@@ -1,13 +1,12 @@
 import os
+import logging
 from PyPDF2 import PdfReader
 import docx
 from bs4 import BeautifulSoup
-from app.models import db, FileContent
-from flask import Flask
-import logging
 
-app = Flask(__name__)
-app.config.from_object('config.Config')
+from app import create_app
+from app.extensions import db
+from app.models import FileContent
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,10 +60,11 @@ def load_files_from_directory(directory):
 
     db.session.commit()
 
-with app.app_context():
-    db.create_all()
-    load_files_from_directory('files')
-    logging.info("All files processed.")
+
 
 from app.models import FileContent
-
+if __name__ == "__main__":
+    app = create_app()
+    with app.app_context():
+        load_files_from_directory('files')
+        print("All files processed.")
