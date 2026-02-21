@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Criar Empresa{% endblock %} {% block
 content %}
 <h1>Criar Empresa</h1>
-<form method="POST" action="{{ url_for('admin.create_company') }}">
+<form method="POST" action="{{ url_for('admin_routes.create_company') }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <div class="mb-3">
     <label for="name" class="form-label">Nome da Empresa</label>
